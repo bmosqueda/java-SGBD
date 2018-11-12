@@ -109,8 +109,9 @@ public class DatabasesView extends javax.swing.JFrame {
         txtErrors = new javax.swing.JScrollPane();
         txtErrores = new javax.swing.JTextArea();
         jLabel1 = new javax.swing.JLabel();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        table = new javax.swing.JTable();
+        panelTable = new javax.swing.JPanel();
+        tableResult = new javax.swing.JScrollPane();
+        tableRes = new javax.swing.JTable();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -144,7 +145,9 @@ public class DatabasesView extends javax.swing.JFrame {
 
         jLabel1.setText("Errores:");
 
-        table.setModel(new javax.swing.table.DefaultTableModel(
+        panelTable.setBackground(new java.awt.Color(80, 115, 149));
+
+        tableRes.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null},
                 {null, null, null, null},
@@ -155,7 +158,18 @@ public class DatabasesView extends javax.swing.JFrame {
                 "Title 1", "Title 2", "Title 3", "Title 4"
             }
         ));
-        jScrollPane1.setViewportView(table);
+        tableResult.setViewportView(tableRes);
+
+        javax.swing.GroupLayout panelTableLayout = new javax.swing.GroupLayout(panelTable);
+        panelTable.setLayout(panelTableLayout);
+        panelTableLayout.setHorizontalGroup(
+            panelTableLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(tableResult)
+        );
+        panelTableLayout.setVerticalGroup(
+            panelTableLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(tableResult)
+        );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -171,9 +185,9 @@ public class DatabasesView extends javax.swing.JFrame {
                         .addGap(25, 25, 25)
                         .addComponent(txtQuery, javax.swing.GroupLayout.PREFERRED_SIZE, 305, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addComponent(btnExcecute, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                    .addComponent(txtErrors))
-                .addGap(0, 33, Short.MAX_VALUE))
+                    .addComponent(txtErrors)
+                    .addComponent(panelTable, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(0, 0, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -187,13 +201,13 @@ public class DatabasesView extends javax.swing.JFrame {
                     .addComponent(txtQuery, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(btnExcecute, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 269, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(16, 16, 16)
+                .addComponent(panelTable, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(txtErrors, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(36, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         pack();
@@ -204,7 +218,7 @@ public class DatabasesView extends javax.swing.JFrame {
         try {
             ArrayList<ArrayList<String>> result = connector.getBySQL(sql);
             
-            String rowData[][] = new String[result.get(0).size()][result.size()];
+            String rowData[][] = new String[result.size()][result.get(0).size()];
             
             /*for (int i = 0; i < result.get(0).size(); i++) {
                 System.out.print(result.get(0).get(i) + "  |  ");
@@ -214,25 +228,30 @@ public class DatabasesView extends javax.swing.JFrame {
             
             for (int i = 0; i < result.size(); i++) {
                 for (int j = 0; j < result.get(0).size(); j++) {
-                    rowData[j][i] = result.get(i).get(j);
+                    rowData[i][j] = result.get(i).get(j);
                     System.out.print(result.get(i).get(j) + "  |  ");
                 }
                 
                 System.out.println("");
             }
             
+            //panelTable.removeAll();
+            
             System.out.println(result.size() - 1 + " rows in set");
 
-            /*TableModel model = new DefaultTableModel(rowData, result.get(0).toArray());*/
+            //TableModel model = new DefaultTableModel(rowData, result.get(0).toArray());*/
             //table = new JTable(model);
-            
             //table.setVisible(true);
             
-            /*JTable table = new JTable(rowData, result.get(0).toArray());
+            //JTable table = new JTable(rowData, result.get(0).toArray());
+            //table.setBounds(30, 40, 200, 300);
             
-            JScrollPane scrollPane = new JScrollPane(table);
-            this.add(scrollPane, BorderLayout.CENTER);
-            scrollPane.setLocation(260, 300);*/
+            
+            DefaultTableModel model = new DefaultTableModel(rowData, result.get(0).toArray());
+            tableRes.setModel(model);
+            //panelTable.add();
+            //panelTable.setSize(500, 500);
+            //panelTable.setVisible(true);
         } catch (SQLException ex) {
             txtErrores.setText("Hubo un problema al ejecutar la consulta:\n" + ex.getMessage());
         } catch (ClassNotFoundException ex) {
@@ -253,9 +272,10 @@ public class DatabasesView extends javax.swing.JFrame {
     private java.awt.Button btnExcecute;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JScrollPane jScrollPane1;
     private java.awt.Label label1;
-    private javax.swing.JTable table;
+    private javax.swing.JPanel panelTable;
+    private javax.swing.JTable tableRes;
+    private javax.swing.JScrollPane tableResult;
     private javax.swing.JTextArea txtErrores;
     private javax.swing.JScrollPane txtErrors;
     private java.awt.TextField txtQuery;
