@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 public class Databases 
 {
 
-    public static void main(String[] args) 
+    /*public static void main(String[] args) 
     {
         Scanner scanner = new Scanner(System.in);
         Connector connector;
@@ -58,7 +58,6 @@ public class Databases
                             else
                                 System.out.println("Valores incorrectos, intenta nuevamente");
                         }
-                        /*DELETECODE*/
                         System.out.println("User: " + user);
                         System.out.println("host: " + host);
                         System.out.println("password: " + password);
@@ -100,7 +99,7 @@ public class Databases
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(Databases.class.getName()).log(Level.SEVERE, null, ex);
         }
-    }
+    }*/
     
     public static void clearScreen() 
     {
@@ -112,7 +111,7 @@ public class Databases
     }
     
     
-    public static void maria()
+    /*public static void maria()
     {
         MariaDB mariaConnector = new MariaDB("localhost", "test", "repoIo", "repoIoPass", "3306");
         try {
@@ -129,5 +128,5 @@ public class Databases
         } catch (SQLException ex) {
             Logger.getLogger(Databases.class.getName()).log(Level.SEVERE, null, ex);
         }
-    }
+    }*/
 }

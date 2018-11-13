@@ -7,10 +7,8 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-public class Connector 
+public abstract class Connector 
 {
     protected String host;
     protected String database;
@@ -18,12 +16,33 @@ public class Connector
     protected String password;
     protected String port;
     
-    protected String className;
     protected Connection connection;
     protected boolean isConnected;
-    private boolean isMaria;
+    private SERVER server;
     
-    public Connector(String host, String database, String user, String password, String port, String className) 
+    public static enum SERVER 
+    {
+        MARIADB ("mysql", "com.mysql.jdbc.Driver"), POSTGRESQL ("postgresql", "org.postgresql.Driver");
+        
+        private final String className;
+        private final String driver;
+        
+        SERVER(String className, String driver)
+        {
+            this.className = className;
+            this.driver = driver;
+        }
+        
+        String className() {
+            return this.className;
+        }
+        
+        String driver() {
+            return this.driver;
+        }
+    }
+    
+    public Connector(String host, String database, String user, String password, String port, SERVER server) 
     {
         this.host = host;
         this.database = database;
@@ -32,16 +51,15 @@ public class Connector
         this.port = port;
         
         this.isConnected = false;
-        this.className = className;
-        this.isMaria = className == "mysql";
+        this.server = server;
     }
     
     public void openConnection() throws ClassNotFoundException, SQLException
     {
-        Class.forName(this.isMaria ? "com.mysql.jdbc.Driver" : "org.postgresql.Driver");
+        Class.forName(this.server.driver);
 
         connection = DriverManager.getConnection(
-                "jdbc:"+this.className+"://" + this.host + ":" + this.port + "/" + this.database,
+                "jdbc:"+this.server.className+"://" + this.host + ":" + this.port + "/" + this.database,
                 this.user,
                 this.password
         );
@@ -55,109 +73,44 @@ public class Connector
         this.isConnected = false;
     }
     
-    public ArrayList<String> getDatabases() throws SQLException, ClassNotFoundException
+    public ArrayList<String[]> getBySQL(String sql) throws SQLException, ClassNotFoundException
     {
+        System.out.println(sql);
         openConnection();
-        String sql = this.isMaria ? "SHOW DATABASES" : "SELECT datname AS \"Database\" FROM pg_database WHERE datname != 'template0' AND datname != 'template1'";
-        
-        System.out.println("Databases: " + sql);
-        
+       
         PreparedStatement stament = connection.prepareStatement(sql);
-        ResultSet result = stament.executeQuery();
-        ArrayList<String> databases = new ArrayList();
-
-        while (result.next()) 
-        {
-            databases.add(result.getString("Database"));
-        }
-
-        result.close();
-        close();
+        ResultSet resultSet = stament.executeQuery();
+        ResultSetMetaData metaData = resultSet.getMetaData();
         
-        return databases;
-    }
-    
-    public ArrayList<String> getTables(String table) throws SQLException, ClassNotFoundException
-    {
-        this.database = table;
-        openConnection();
-        String sql = this.isMaria ? "SELECT TABLE_NAME AS 'Table' FROM information_schema.TABLES WHERE TABLE_SCHEMA = '"+table+"'"
-                    : "SELECT tablename AS \"Table\" FROM pg_tables WHERE schemaname = 'public'";
+        int columnsCount = metaData.getColumnCount();
+        String columns[] = new String[columnsCount];
+        ArrayList<String[]> rows = new ArrayList<>();
         
-        System.out.println("Tables: " + sql);
-        
-        PreparedStatement stament = connection.prepareStatement(sql);
-        ResultSet result = stament.executeQuery();
-        ArrayList<String> databases = new ArrayList();
-
-        while (result.next()) 
-        {
-            databases.add(result.getString("Table"));
-        }
-
-        result.close();
-        close();
-        
-        return databases;
-    }
-    
-    public ArrayList<String> getColumns(String table, String database) throws SQLException, ClassNotFoundException
-    {
-        openConnection();
-        
-        String sql = this.isMaria ? "SELECT COLUMN_NAME AS 'Column' FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '"+database+"' AND TABLE_NAME = '"+table+"'"
-            : "select column_name AS \"Column\" from INFORMATION_SCHEMA.COLUMNS where table_name = '"+table+"'";
-        
-        System.out.println("Columns: " + sql);
-        
-        PreparedStatement stament = connection.prepareStatement(sql);
-        ResultSet result = stament.executeQuery();
-        ArrayList<String> databases = new ArrayList();
-
-        while (result.next()) 
-        {
-            databases.add(result.getString("Column"));
-        }
-
-        result.close();
-        close();
-        
-        return databases;
-    }
-    
-    public ArrayList<ArrayList<String>> getBySQL(String sql) throws SQLException, ClassNotFoundException
-    {
-        openConnection();
-        
-        PreparedStatement stament = connection.prepareStatement(sql);
-        ResultSet result = stament.executeQuery();
-        ArrayList<ArrayList<String>> rows = new ArrayList<ArrayList<String>>();
-        
-        ResultSetMetaData metaData = result.getMetaData();
-        int count = metaData.getColumnCount(); //number of column
-            
-        ArrayList<String> columns = new ArrayList<String>();
-        for (int i = 1; i <= count; i++) {
-            columns.add(metaData.getColumnLabel(i));
-        }
+        for (int i = 1; i <= columnsCount; i++) 
+            columns[i - 1] = metaData.getColumnLabel(i);
         
         rows.add(columns);
-
-        while (result.next()) 
+        
+        while (resultSet.next()) 
         {
-            ArrayList<String> temp = new ArrayList<String>();
-            for (int i = 1; i <= count; i++) {
-                temp.add(result.getString(metaData.getColumnLabel(i)));
-            }
+            String temp[] = new String[columnsCount];
+            for (int i = 1; i <= columnsCount; i++) 
+                temp[i -1] = resultSet.getString(metaData.getColumnLabel(i));
             
             rows.add(temp);
         }
 
-        result.close();
+        resultSet.close();
         close();
         
         return rows;
     }
+    
+    public abstract ArrayList<String[]> getDatabases() throws SQLException, ClassNotFoundException ;
+    
+    public abstract ArrayList<String[]> getTables(String database) throws SQLException, ClassNotFoundException;
+    
+    public abstract ArrayList<String[]> getColumns(String table) throws SQLException, ClassNotFoundException;
     
     public String getHost() {
         return host;

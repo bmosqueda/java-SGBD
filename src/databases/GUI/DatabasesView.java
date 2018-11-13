@@ -1,6 +1,9 @@
 package databases.GUI;
 
 import databases.Connector;
+import databases.models.Column;
+import databases.models.Database;
+import databases.models.Table;
 import java.awt.BorderLayout;
 import java.awt.Button;
 import java.sql.SQLException;
@@ -23,8 +26,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 public class DatabasesView extends javax.swing.JFrame {
     
     private Connector connector;
-    private ArrayList<String> databases;
-    private ArrayList<String> tables[];
+    private Database databases[];
     private ArrayList<String> columns[];
     private JTree tree;
     
@@ -37,12 +39,59 @@ public class DatabasesView extends javax.swing.JFrame {
         try {
             DefaultMutableTreeNode root = new DefaultMutableTreeNode("Databases");        
             
-            this.databases = connector.getDatabases();
-            this.tables = new ArrayList[this.databases.size()];
-            this.columns = new ArrayList[this.databases.size()];
+            ArrayList<String[]> databases = connector.getDatabases();
+            
+            int databasesLength = databases.size();
+            this.databases = new Database[databasesLength - 1];
+            
+            //Empieza en 1 porque la primera file es la metadata de las columnas
+            for (int i = 1; i < databasesLength; i++)
+            {
+                this.databases[i - 1] = new Database(databases.get(i)[0]);
                 
-            DefaultMutableTreeNode tablesNodes[] = new DefaultMutableTreeNode[this.databases.size()];
+                ArrayList<String[]> tempTables = connector.getTables(databases.get(i)[0]);
+                int tableLength = tempTables.size();
+                Table tables[] = new Table[tableLength - 1];
+                        
+                for (int j = 1; j < tableLength; j++) 
+                {
+                    tables[j - 1] = new Table(tempTables.get(j)[0]);
+                    
+                    ArrayList<String[]> tempColumns = connector.getColumns(tempTables.get(j)[0]);
+                    int columnLength = tempColumns.size();
+                    Column columns[] = new Column[columnLength - 1];
+                    
+                    for (int k = 1; k < columnLength; k++) 
+                    {
+                        columns[k - 1] = new Column(tempColumns.get(k)[0]);
+                    }
+                    
+                    tables[j - 1].setColumns(columns);
+                }
                 
+                this.databases[i - 1].setTables(tables);
+            }
+             
+            System.out.println("Hola");
+            
+            /*databases = null;
+            
+            for (int i = 0; i < tables.size(); ii++) 
+            {
+                DefaultMutableTreeNode tempTable = new DefaultMutableTreeNode(tables.get(ii));
+
+                
+
+                for (int iii = 0; iii < columns[i].size(); iii++) {
+                    tempTable.add(new DefaultMutableTreeNode(columns[i].get(iii)));
+                }
+                tablesNodes[i].add(tempTable);
+            }
+            
+            ArrayList tables[] = new ArrayList[this.databases.size()];
+            ArrayList columns[] = new ArrayList[this.databases.size()];
+                
+            DefaultMutableTreeNode tablesNodes[] = new DefaultMutableTreeNode[length];    
             
             for (int i = 0; i < this.databases.size(); i++) 
             {
@@ -87,7 +136,7 @@ public class DatabasesView extends javax.swing.JFrame {
                     
                     System.out.println(selectedNode.getParent().toString());
                 }
-            });
+            });*/
             
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(DatabasesView.class.getName()).log(Level.SEVERE, null, ex);
@@ -95,7 +144,7 @@ public class DatabasesView extends javax.swing.JFrame {
             Logger.getLogger(DatabasesView.class.getName()).log(Level.SEVERE, null, ex);
         }
         initComponents();
-        scroll.setSize(250, 500);
+        //scroll.setSize(250, 500);
     }
 
     @SuppressWarnings("unchecked")
@@ -215,14 +264,14 @@ public class DatabasesView extends javax.swing.JFrame {
 
     private void btnExcecuteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExcecuteActionPerformed
         String sql = txtQuery.getText();
-        try {
+        /*try {
             ArrayList<ArrayList<String>> result = connector.getBySQL(sql);
             
             String rowData[][] = new String[result.size()][result.get(0).size()];
             
-            /*for (int i = 0; i < result.get(0).size(); i++) {
+            for (int i = 0; i < result.get(0).size(); i++) {
                 System.out.print(result.get(0).get(i) + "  |  ");
-            }*/
+            }
             
             System.out.println("");
             
@@ -239,7 +288,7 @@ public class DatabasesView extends javax.swing.JFrame {
             
             System.out.println(result.size() - 1 + " rows in set");
 
-            //TableModel model = new DefaultTableModel(rowData, result.get(0).toArray());*/
+            //TableModel model = new DefaultTableModel(rowData, result.get(0).toArray());
             //table = new JTable(model);
             //table.setVisible(true);
             
@@ -256,7 +305,7 @@ public class DatabasesView extends javax.swing.JFrame {
             txtErrores.setText("Hubo un problema al ejecutar la consulta:\n" + ex.getMessage());
         } catch (ClassNotFoundException ex) {
             txtErrores.setText(ex.getMessage());
-        }
+        }*/
         
     }//GEN-LAST:event_btnExcecuteActionPerformed
 
