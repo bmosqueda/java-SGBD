@@ -14,6 +14,10 @@ public class Database
     {
         this.tables = tables;
     }
+    
+    public Table[] getTables() {
+        return this.tables;
+    }
 
     public String getName() {
         return name;

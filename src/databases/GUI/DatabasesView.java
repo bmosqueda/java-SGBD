@@ -1,12 +1,14 @@
 package databases.GUI;
 
 import databases.Connector;
+import databases.MariaDB;
 import databases.PostgreSQL;
 import databases.models.Column;
 import databases.models.Database;
 import databases.models.Table;
 import java.awt.BorderLayout;
 import java.awt.Button;
+import java.rmi.NotBoundException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -27,7 +29,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 public class DatabasesView extends javax.swing.JFrame {
     
     private Connector connector;
-    private Database databases[];
+    //private Database databases[];
     private ArrayList<String> columns[];
     private JTree tree;
     
@@ -42,15 +44,15 @@ public class DatabasesView extends javax.swing.JFrame {
             ArrayList<String[]> databases = connector.getDatabases();
             
             int databasesLength = databases.size();
-            this.databases = new Database[databasesLength - 1];
+            //this.databases = new Database[databasesLength - 1];
             
-            DefaultMutableTreeNode databasesNodes[] = new DefaultMutableTreeNode[databasesLength];
+            DatabaseNode databasesNodes[] = new DatabaseNode[databasesLength];
             
             //Empieza en 1 porque la primera file es la metadata de las columnas
             for (int i = 1; i < databasesLength; i++)
             {
-                this.databases[i - 1] = new Database(databases.get(i)[0]);
-                databasesNodes[i - 1] = new DefaultMutableTreeNode(databases.get(i)[0]);
+                //this.databases[i - 1] = new Database(databases.get(i)[0]);
+                databasesNodes[i - 1] = new DatabaseNode(databases.get(i)[0]);
                 
                 
                 ArrayList<String[]> tempTables = connector.getTables(databases.get(i)[0]);
@@ -67,7 +69,6 @@ public class DatabasesView extends javax.swing.JFrame {
                     
                     //Nodo de tabla
                     DefaultMutableTreeNode tempNodeTable = new DefaultMutableTreeNode(tempTables.get(j)[0]);
-                    
                     for (int k = 1; k < columnLength; k++) 
                     {
                         columns[k - 1] = new Column(tempColumns.get(k)[0]);
@@ -79,7 +80,8 @@ public class DatabasesView extends javax.swing.JFrame {
                 }
                 
                 root.add(databasesNodes[i - 1]);
-                this.databases[i - 1].setTables(tables);
+                //this.databases[i - 1].setTables(tables);
+                databasesNodes[i - 1].database.setTables(tables);
             }
             
             this.tree = new JTree(root);
@@ -88,24 +90,28 @@ public class DatabasesView extends javax.swing.JFrame {
             add(scroll);
             
             this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            this.setTitle("JTree Example");
             this.pack();
-            this.setVisible(true);
             
+            //Events
             tree.getSelectionModel().addTreeSelectionListener(new TreeSelectionListener() {
                 @Override
                 public void valueChanged(TreeSelectionEvent e) {
                     DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
-                    tree.setScrollsOnExpand(true);
-                    if (selectedNode.getParent().toString() == "Databases") {
+                            
+                    if (isDatabaseNode(selectedNode))
+                    {
                         connector.setDatabase(selectedNode.toString());
-                    } else if (selectedNode.getParent().getParent().toString() == "Databases") {
-                        connector.setDatabase(selectedNode.getParent().toString());
-                    } else {
-                        connector.setDatabase(selectedNode.getParent().getParent().toString());
+                        DatabaseNode node = (DatabaseNode) selectedNode;
+                        
+                        System.out.println("DATABASENAME: " + node.database.getName());
+                        System.out.println("First table: " + node.database.getTables()[0].getName());
                     }
+                    else if (isTableNode(selectedNode))
+                        connector.setDatabase(selectedNode.getParent().toString());
+                    else
+                        connector.setDatabase(selectedNode.getParent().getParent().toString());
 
-                    System.out.println(selectedNode.getParent().toString());
+                    System.out.println(selectedNode.toString());
                 }
             });
             
@@ -116,8 +122,30 @@ public class DatabasesView extends javax.swing.JFrame {
         }
         
         initComponents();
-        scroll.setSize(250, 500);
+        scroll.setSize(250, 715);
     }
+    
+    public static boolean isDatabaseNode(DefaultMutableTreeNode node)
+    {
+        return node.getLevel() == 1;
+        /*if(node.isRoot())
+            return false;
+        
+        return ((DefaultMutableTreeNode)node.getParent()).isRoot();*/
+    }
+    
+    public static boolean isTableNode(DefaultMutableTreeNode node)
+    {
+        return node.getLevel() == 2;
+        //return isDatabaseNode((DefaultMutableTreeNode) node.getParent());
+    }
+    
+    public static boolean isColumnNode(DefaultMutableTreeNode node)
+    {
+        return node.getLevel() == 3;
+        //return isTableNode((DefaultMutableTreeNode) node.getParent());
+    }
+    
 
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
@@ -223,22 +251,24 @@ public class DatabasesView extends javax.swing.JFrame {
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(53, 53, 53)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(label1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(txtQuery, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(btnExcecute, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(16, 16, 16)
-                .addComponent(panelTable, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(lblResulSet)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 37, Short.MAX_VALUE)
-                .addComponent(jLabel1)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(txtErrors, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(53, 53, 53)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(label1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(txtQuery, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnExcecute, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(16, 16, 16)
+                        .addComponent(panelTable, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(lblResulSet)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 37, Short.MAX_VALUE)
+                        .addComponent(jLabel1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(txtErrors, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 717, Short.MAX_VALUE))
                 .addContainerGap())
-            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 729, Short.MAX_VALUE)
         );
 
         pack();
@@ -278,7 +308,8 @@ public class DatabasesView extends javax.swing.JFrame {
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new DatabasesView(new PostgreSQL("localhost", "postgres", "postgres", "postPass", "5432")).setVisible(true);
+                //new DatabasesView(new PostgreSQL("localhost", "postgres", "postgres", "postPass", "5432")).setVisible(true);
+                new DatabasesView(new MariaDB("localhost", "constructora", "root", "mariaPass", "3306")).setVisible(true);
             }
         });
     }
