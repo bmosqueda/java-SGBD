@@ -108,7 +108,7 @@ public class DatabasesView extends javax.swing.JFrame {
                     }
                     else if (isTableNode(selectedNode))
                         connector.setDatabase(selectedNode.getParent().toString());
-                    else
+                    else if(isColumnNode(selectedNode))
                         connector.setDatabase(selectedNode.getParent().getParent().toString());
 
                     System.out.println(selectedNode.toString());
