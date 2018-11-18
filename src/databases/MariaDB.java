@@ -1,5 +1,8 @@
 package databases;
 
+import databases.models.Column;
+import databases.models.Database;
+import databases.models.Table;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
@@ -11,26 +14,33 @@ public class MariaDB extends Connector
     }
     
     @Override
-    public ArrayList<String[]> getDatabases() throws SQLException, ClassNotFoundException 
+    public Database[] getDatabases() throws SQLException, ClassNotFoundException 
     {
         String sql = "SHOW DATABASES";
 
-        return this.getBySQL(sql);
+        return this.getDatabasesBySQL(sql);
     }
     
     @Override
-    public ArrayList<String[]> getTables(String database) throws SQLException, ClassNotFoundException 
+    public Table[] getTables(String database) throws SQLException, ClassNotFoundException 
     {
         String sql = "SELECT TABLE_NAME AS 'Table' FROM information_schema.TABLES WHERE TABLE_SCHEMA = '" + database + "'";
         
-        return this.getBySQL(sql);
+        return this.getTablesBySQL(sql);
     }
     
     @Override
-    public ArrayList<String[]> getColumns(String table) throws SQLException, ClassNotFoundException 
+    public Column[] getColumns(String table) throws SQLException, ClassNotFoundException 
     {
-        String sql = "SELECT COLUMN_NAME AS 'Column' FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '"+database+"' AND TABLE_NAME = '"+table+"'";
+        //String sql = "SELECT COLUMN_NAME AS 'Column' FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '"+database+"' AND TABLE_NAME = '"+table+"'";
+        String sql = "  SELECT \n" +
+                    "    COLUMN_NAME AS 'Field'," +
+                    "    DATA_TYPE AS 'Type'," +
+                    "    IS_NULLABLE AS 'Null'," +
+                    "    COLUMN_KEY AS 'Key' " +
+                    "  FROM information_schema.COLUMNS " +
+                    "  WHERE TABLE_SCHEMA = '"+this.database+"' AND TABLE_NAME = '"+table+"'";
         
-        return this.getBySQL(sql);
+        return this.getColumnsBySQL(sql);
     }
 }

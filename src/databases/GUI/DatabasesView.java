@@ -8,6 +8,9 @@ import databases.models.Database;
 import databases.models.Table;
 import java.awt.BorderLayout;
 import java.awt.Button;
+import java.awt.Component;
+import java.awt.PopupMenu;
+import java.awt.TextField;
 import java.rmi.NotBoundException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -18,7 +21,9 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
@@ -41,47 +46,38 @@ public class DatabasesView extends javax.swing.JFrame {
         try {
             DefaultMutableTreeNode root = new DefaultMutableTreeNode("Databases");        
             
-            ArrayList<String[]> databases = connector.getDatabases();
+            Database[] databases = connector.getDatabases();
             
-            int databasesLength = databases.size();
+            int databasesLength = databases.length;
             //this.databases = new Database[databasesLength - 1];
             
             DatabaseNode databasesNodes[] = new DatabaseNode[databasesLength];
             
-            //Empieza en 1 porque la primera file es la metadata de las columnas
-            for (int i = 1; i < databasesLength; i++)
+            for (int i = 0; i < databasesLength; i++)
             {
-                //this.databases[i - 1] = new Database(databases.get(i)[0]);
-                databasesNodes[i - 1] = new DatabaseNode(databases.get(i)[0]);
+                databasesNodes[i] = new DatabaseNode(databases[i]);
                 
+                Table tables[] = connector.getTables(databases[i].getName());
+                int tableLength = tables.length;
                 
-                ArrayList<String[]> tempTables = connector.getTables(databases.get(i)[0]);
-                int tableLength = tempTables.size();
-                Table tables[] = new Table[tableLength - 1];
-                        
-                for (int j = 1; j < tableLength; j++) 
+                for (int j = 0; j < tableLength; j++) 
                 {
-                    tables[j - 1] = new Table(tempTables.get(j)[0]);
-                    
-                    ArrayList<String[]> tempColumns = connector.getColumns(tempTables.get(j)[0]);
-                    int columnLength = tempColumns.size();
-                    Column columns[] = new Column[columnLength - 1];
-                    
+                    Column columns[] = connector.getColumns(tables[j].getName());
+                    int columnLength = columns.length;
                     //Nodo de tabla
-                    DefaultMutableTreeNode tempNodeTable = new DefaultMutableTreeNode(tempTables.get(j)[0]);
+                    DefaultMutableTreeNode tempNodeTable = new DefaultMutableTreeNode(tables[j].getName());
+                    
                     for (int k = 1; k < columnLength; k++) 
                     {
-                        columns[k - 1] = new Column(tempColumns.get(k)[0]);
-                        tempNodeTable.add(new DefaultMutableTreeNode(tempColumns.get(k)[0]));
+                        tempNodeTable.add(new DefaultMutableTreeNode(columns[k].getName()));
                     }
                     
-                    tables[j - 1].setColumns(columns);
-                    databasesNodes[i - 1].add(tempNodeTable);
+                    tables[j].setColumns(columns);
+                    databasesNodes[i].add(tempNodeTable);
                 }
                 
-                root.add(databasesNodes[i - 1]);
-                //this.databases[i - 1].setTables(tables);
-                databasesNodes[i - 1].database.setTables(tables);
+                root.add(databasesNodes[i]);
+                databasesNodes[i].database.setTables(tables);
             }
             
             this.tree = new JTree(root);
@@ -107,7 +103,10 @@ public class DatabasesView extends javax.swing.JFrame {
                         System.out.println("First table: " + node.database.getTables()[0].getName());
                     }
                     else if (isTableNode(selectedNode))
+                    {
                         connector.setDatabase(selectedNode.getParent().toString());
+                        showForm(selectedNode.toString(), (DatabaseNode) selectedNode.getParent());
+                    }
                     else if(isColumnNode(selectedNode))
                         connector.setDatabase(selectedNode.getParent().getParent().toString());
 
@@ -123,6 +122,57 @@ public class DatabasesView extends javax.swing.JFrame {
         
         initComponents();
         scroll.setSize(250, 715);
+    }
+    
+    public void showForm(String tableName, DatabaseNode node)
+    {
+        System.out.println("SHOWFORMS");
+        Database db = node.database;
+        Table table = findTable(tableName, db.getTables());
+        if(table == null)
+        {
+            System.out.println("TABLA NO ENCONTRADA");
+            return;
+        }
+        
+        Column cols[] = table.getColumns();
+        int colsCount = cols.length;
+        //Component components[] = new Component[colsCount];
+        
+        for (int i = 0; i < colsCount; i++) 
+        {
+            System.out.println(cols[i]);
+            scrollForm.add(createComponent(cols[i]));
+        }
+        
+        scrollForm.revalidate();
+        scrollForm.repaint();
+    }
+    
+    private Component createComponent(Column col) {
+        Component component = null;
+        
+        if(col.getType() == Column.TYPE.INT)
+        {
+            component = new JSpinner();
+        }        
+        else 
+        {
+            component = new JTextField(10);
+        }
+        
+        component.setName(col.getName());
+        
+        return component;
+    }
+    
+    public Table findTable(String table, Table[] tables)
+    {
+        for (int i = 0; i < tables.length; i++) 
+            if(table.equals(tables[i].getName()))
+                return tables[i];
+        
+        return null;
     }
     
     public static boolean isDatabaseNode(DefaultMutableTreeNode node)
@@ -162,6 +212,7 @@ public class DatabasesView extends javax.swing.JFrame {
         tableResult = new javax.swing.JScrollPane();
         tableRes = new javax.swing.JTable();
         lblResulSet = new javax.swing.JLabel();
+        scrollForm = new javax.swing.JScrollPane();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -242,7 +293,9 @@ public class DatabasesView extends javax.swing.JFrame {
                                 .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                                     .addComponent(jLabel1)
                                     .addGap(385, 385, 385))))
-                        .addGap(0, 20, Short.MAX_VALUE))
+                        .addGap(37, 37, 37)
+                        .addComponent(scrollForm, javax.swing.GroupLayout.DEFAULT_SIZE, 413, Short.MAX_VALUE)
+                        .addContainerGap())
                     .addGroup(layout.createSequentialGroup()
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(lblResulSet)
@@ -255,19 +308,22 @@ public class DatabasesView extends javax.swing.JFrame {
                     .addGroup(layout.createSequentialGroup()
                         .addGap(53, 53, 53)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(label1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(txtQuery, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnExcecute, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(16, 16, 16)
-                        .addComponent(panelTable, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(label1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(txtQuery, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(btnExcecute, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(16, 16, 16)
+                                .addComponent(panelTable, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(scrollForm, javax.swing.GroupLayout.PREFERRED_SIZE, 751, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(lblResulSet)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 37, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(jLabel1)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(txtErrors, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 717, Short.MAX_VALUE))
+                    .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 938, Short.MAX_VALUE))
                 .addContainerGap())
         );
 
@@ -321,6 +377,7 @@ public class DatabasesView extends javax.swing.JFrame {
     private java.awt.Label label1;
     private javax.swing.JLabel lblResulSet;
     private javax.swing.JPanel panelTable;
+    private javax.swing.JScrollPane scrollForm;
     private javax.swing.JTable tableRes;
     private javax.swing.JScrollPane tableResult;
     private javax.swing.JTextArea txtErrores;

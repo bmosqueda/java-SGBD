@@ -1,5 +1,9 @@
 package databases;
 
+import databases.GUI.DatabaseNode;
+import databases.models.Column;
+import databases.models.Database;
+import databases.models.Table;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -106,11 +110,50 @@ public abstract class Connector
         return rows;
     }
     
-    public abstract ArrayList<String[]> getDatabases() throws SQLException, ClassNotFoundException ;
+    public Database[] getDatabasesBySQL(String sql) throws SQLException, ClassNotFoundException
+    {
+        ArrayList<String[]> arrayDatabases = this.getBySQL(sql);
+        int length = arrayDatabases.size();
+        Database databases[] = new Database[length - 1];
+        
+        //Empieza en 1 porque la primera file es la metadata de las columnas
+        for (int i = 1; i < length; i++)
+            databases[i - 1] = new Database(arrayDatabases.get(i)[0]);
+        
+        return databases;
+    }
     
-    public abstract ArrayList<String[]> getTables(String database) throws SQLException, ClassNotFoundException;
+    public Table[] getTablesBySQL(String sql) throws SQLException, ClassNotFoundException {
+        ArrayList<String[]> arrayTables = this.getBySQL(sql);
+        int length = arrayTables.size();
+        Table tables[] = new Table[length - 1];
+
+        //Empieza en 1 porque la primera file es la metadata de las columnas
+        for (int i = 1; i < length; i++) 
+            tables[i - 1] = new Table(arrayTables.get(i)[0]);
+        
+
+        return tables;
+    }
     
-    public abstract ArrayList<String[]> getColumns(String table) throws SQLException, ClassNotFoundException;
+    public Column[] getColumnsBySQL(String sql) throws SQLException, ClassNotFoundException {
+        ArrayList<String[]> arrayColumns = this.getBySQL(sql);
+        int length = arrayColumns.size();
+        Column columns[] = new Column[length - 1];
+        
+        //Empieza en 1 porque la primera file es la metadata de las columnas
+        for (int i = 1; i < length; i++) 
+            columns[i - 1] = new Column(arrayColumns.get(i)[0], arrayColumns.get(i)[1], arrayColumns.get(i)[2], arrayColumns.get(i)[3]);
+        
+
+        return columns;
+    }
+    
+    public abstract Database[] getDatabases() throws SQLException, ClassNotFoundException ;
+    
+    public abstract Table[] getTables(String database) throws SQLException, ClassNotFoundException;
+    
+    public abstract Column[] getColumns(String table) throws SQLException, ClassNotFoundException;
     
     public String getHost() {
         return host;

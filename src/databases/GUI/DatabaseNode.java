@@ -7,9 +7,9 @@ public class DatabaseNode extends DefaultMutableTreeNode
 {
     public Database database;
 
-    public DatabaseNode(String name) 
+    public DatabaseNode(Database database) 
     {
-        super(name);
-        this.database = new Database(name);
+        super(database.getName());
+        this.database = database;
     }
 }
